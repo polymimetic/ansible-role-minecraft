@@ -1,0 +1,29 @@
+---
+services: docker
+
+env:
+  # Test package install on all supported OSes.
+  - distro: gallium
+    playbook: test.yml
+  - distro: xenial
+    playbook: test.yml
+
+script:
+  # Configure test script so we can run extra tests after playbook is run.
+  - export container_id=$(date +%s)
+  - export cleanup=false
+  - export test_suite=false
+
+  # Run tests.
+  - chmod +x ${PWD}/tests/run-test.sh
+  - ${PWD}/tests/run-test.sh
+
+  # Ensure minecraft is installed and working.
+  - 'docker exec --tty ${container_id} env TERM=xterm which minecraft'
+  - 'docker exec --tty ${container_id} env TERM=xterm test -x /usr/bin/minecraft'
+
+  - 'docker exec --tty ${container_id} env TERM=xterm minecraft --version'
+  - 'docker exec --tty ${container_id} env TERM=xterm /usr/bin/minecraft --version | grep -qF "$MINECRAFT_VERSION"'
+
+notifications:
+  webhooks: https://galaxy.ansible.com/api/v1/notifications/
